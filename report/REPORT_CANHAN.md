@@ -150,26 +150,24 @@ tests/test_solution.py::TestEmbeddingStoreDeleteDocument::test_delete_returns_tr
 
 ## 5. Kết quả truy xuất của tôi (Competition Results) — Cá nhân (10 điểm)
 
-**Chiến lược:** `FixedSizeChunker(chunk_size=250, overlap=50)` + OpenAI `text-embedding-3-small` / TF-IDF
+**Chiến lược:** `FixedSizeChunker(chunk_size=250, overlap=50)` + TF-IDF / OpenAI `text-embedding-3-small`
 
-> Kết quả chạy trên corpus 5 tài liệu ĐHQGHN tại `data/vnu/`, với cùng 5 benchmark query của nhóm. Cấu hình tạo **227 chunks** (do tài liệu hướng dẫn đào tạo dài 41,271 ký tự). 4/5 câu đều có chunk liên quan trong top-3; riêng câu 5 là failure case chung của cả nhóm do nhiễu từ khóa tổng quát.
+> **Bộ câu hỏi dùng chung với `REPORT_NHOM.md` và hai thành viên còn lại.** Câu 1 dùng `metadata_filter={"audience":"student"}`; câu 3–5 dùng `metadata_filter={"study_level":"graduate"}`. Bộ tài liệu PDF sau khi chia nhỏ tạo ra tổng cộng **1,644 chunks**.
 
 | # | Câu hỏi (Query) | Top-1 Chunk truy xuất được (tóm tắt) | Điểm Score | Có liên quan không? (Relevant) | Câu trả lời của Agent (tóm tắt) |
 |---|---|---|---:|---|---|
-| 1 | Số kí hiệu quy định học bổng ĐHQGHN? `metadata_filter={"audience": "student"}` | `vnu-scholarship-regulation-2024#5`: Quy định về công tác quản lý và sử dụng học bổng tại ĐHQGHN | 0.6732 | Có, top-1 | Trả đúng: Quyết định số 4618/QĐ-ĐHQGHN. |
-| 2 | Quy định học bổng bắt đầu hiệu lực ngày nào? | `vnu-scholarship-regulation-2024#5`: Tiêu đề quy định học bổng (ngày hiệu lực 07/10/2024 nằm ở chunk#6 - Top-2) | 0.6836 | Có, top-2 | Top-1 là tiêu đề chung; Top-2 chứa ngày hiệu lực 07/10/2024 nên Agent trả lời đúng. |
-| 3 | Hạn làm bài kiểm tra tài liệu tập huấn quy chế? | `vnu-student-training-handbook#2`: Hướng dẫn sinh viên đọc toàn văn quy chế và làm bài kiểm tra trước hạn | 0.5419 | Có, top-1 | Trả đúng: Hạn hoàn thành trước ngày 28/02/2023. |
-| 4 | Mã văn bản hướng dẫn khóa luận nhóm ngoài sư phạm? | `vnu-undergraduate-guidance-directory#3`: Danh mục văn bản hướng dẫn đào tạo, mã 3002/HD-ĐHGD | 0.4583 | Có, top-3 | Top-3 chứa mã hướng dẫn 3002/HD-ĐHGD nhưng bị lẫn giữa nhiều văn bản khác nên Agent trích dẫn thiếu một phần chi tiết. |
-| 5 | Danh mục HUS-VNU có nhóm đào tạo nào? | `vnu-undergraduate-guidance-directory#19`: Danh mục hướng dẫn học phần ngoại ngữ | 0.5803 | Không (Failure case) | Top-3 bị chiếm lĩnh hoàn toàn bởi các chunk của trang hướng dẫn đào tạo dài; không truy xuất được `vnu-regulations-directory`. |
+| 1 | Văn bản quy định quản lý và sử dụng học bổng tại ĐHQGHN có số kí hiệu nào? `metadata_filter={"audience":"student"}` | `vnu-scholarship-regulation-2024` | 0.7041 | Có, top-1 | Đúng tài liệu học bổng; tuy nhiên extractive answer chưa rút gọn được số `4618/QĐ-ĐHQGHN`. |
+| 2 | Theo quy chế đào tạo ĐHQGHN, sinh viên được rút bớt học phần trong bao lâu kể từ đầu học kỳ chính và học kỳ phụ? | `vnu-scholarship-regulation-2024` | 0.6577 | Không | Failure case: Top-3 không có đúng tài liệu/điều khoản 2 tuần và 1 tuần do nhiễu lexical. |
+| 3 | Quyết định 1418/QĐ-ĐHNN ban hành ngày nào? `metadata_filter={"study_level":"graduate"}` | `vnu-doctoral-training-guidance-1418` | 0.6367 | Có, top-1 | Đúng tài liệu, context top-1 chứa ngày ban hành `22/07/2023`. |
+| 4 | Hướng dẫn thực hiện Quy chế đào tạo Thạc sĩ tại Trường Đại học Ngoại ngữ thay thế quyết định số nào? `metadata_filter={"study_level":"graduate"}` | `vnu-doctoral-training-guidance-1418` | 0.7670 | Không | Failure case: Top-3 không có tài liệu Thạc sĩ và số `191/QĐ-ĐHNN` (bị nhầm sang văn bản Tiến sĩ). |
+| 5 | Quy chế đào tạo sau đại học theo Quyết định 1555 áp dụng cho những trình độ đào tạo nào? `metadata_filter={"study_level":"graduate"}` | `vnu-graduate-training-regulation-1555` | 0.6252 | Có, top-1 | Đúng tài liệu QĐ 1555, context nêu phạm vi đào tạo thạc sĩ và tiến sĩ. |
 
-**Bao nhiêu câu hỏi trả về chunk có liên quan trong top-3?** 4 / 5
+**Bao nhiêu câu hỏi trả về đúng tài liệu nguồn trong top-3?** 3 / 5 câu.
 
-**Điểm retrieval theo rubric:** 7 / 10
-
-> Câu 1 và 3 đạt 2 điểm vì top-1 chứa đủ bằng chứng và Agent trả lời chính xác. Câu 2 và 4 đạt 1 điểm vì bằng chứng nằm ở top-2/top-3. Câu 5 đạt 0 điểm vì bị nhiễu ngữ cảnh bởi các trang hướng dẫn đào tạo có tần suất từ khóa "đào tạo" quá lớn.
+**Điểm retrieval theo rubric:** 6 / 10 điểm (Khớp với đánh giá nhóm: 3/5 câu truy xuất đúng tài liệu nguồn ở Top-3; câu #2 và #4 là failure case do mất tài liệu nguồn).
 
 **Điều hay nhất tôi học được từ thành viên khác / nhóm khác (qua demo):**
-> Khi tài liệu HTML có độ dài rất lớn (như file hướng dẫn đào tạo hơn 41,000 ký tự), việc chia nhỏ fixed-size sinh ra hàng trăm chunk cạnh tranh slot trong top-k. Chiến lược Heading/section của bạn Bảo gom thành các khối logic giúp kiểm soát số lượng chunk tốt hơn, trong khi chiến lược của em chỉ ra rõ điểm yếu của vector retrieval khi gặp tài liệu chứa nhiều từ khóa phổ quát.
+> Fixed-size hữu ích để tách PDF dài mà không làm đứt đoạn câu nhờ overlap. Nhưng số chunk tăng lên 1,644 khiến tín hiệu lexical bị loãng ở câu 2 và câu 4, dẫn đến việc retriever bị nhầm lẫn giữa các văn bản có ngữ cảnh tương tự (như tài liệu Thạc sĩ và Tiến sĩ). Chiến lược Heading/section của bạn Bảo gom thành các khối logic giúp kiểm soát số lượng chunk tốt hơn nhiều (chỉ 59 chunk), duy trì cả 5/5 tài liệu nguồn trong Top-3.
 
 ---
 
